@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+			  crossorigin="anonymous"></script>
+
+<!--<link rel="stylesheet" href="css/chat_screen_css.css">-->
+ <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!--<link rel="stylesheet" href="css/bootstrap.css"/> -->
+
+    <!--====================Style===============-->
+<style>
+    #container{
+        width: 400px;
+      
+    }    
+.chat-screen{
+padding: 10px;    
+height: 520px;
+background-color: whitesmoke;
+border-bottom-left-radius: 10px;
+border-bottom-right-radius: 10px;
+}
+
+.chat-screen-header{
+height:60px;
+padding-left: 10px;   
+    padding-right: 10px;  
+background-color:greenyellow;
+width: 100%;
+margin-top: 20px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+
+.chat-screen-header-title{
+    color: dimgray;
+    text-align: center;
+    float: left;
+    font-size: 25px;
+}
+
+.hide_button{
+    float:right;
+    background-color:greenyellow;
+    margin-top: 15px;
+    border: none;
+}
+
+.screen{
+    margin-top: 10px;
+    margin-bottom: 15px;
+    height: 83%;
+    width: 100%;
+    background-color: white;
+    overflow-y: scroll;
+}
+
+.input-div-margin{
+   margin-left: -15px;
+    float:left;
+}
+.button-div-margin{
+   float: right; 
+}
+
+#input{
+ height: 45px;    
+}
+
+#sendmsg {
+ height: 45px; 
+}
+
+.user-main-div-css{
+    text-align: left;
+    margin-bottom: 5px;
+}
+.user-msg{
+    margin-left: 15px;
+    margin-top: 10px;
+    padding: 10px 20px;
+    float: left;
+    background-color: darkgrey;
+    word-wrap: normal;
+    width: 80%;
+    height: auto;
+    border-radius: 10px;
+}
+.resp-msg{
+    margin-right: 15px;
+    margin-top: 10px;
+    padding: 10px 20px;
+    float: right;
+    background-color: aquamarine;
+    word-wrap: normal;
+    width: 80%;
+    height: auto;
+    border-radius: 10px;
+}
+    
+    </style>
+    
+    
+<script>
+    
+            var pos_sugesstion_array=["Would you like me to check for another date?","Sorry. How about another date?","Would you be interested for a different date?"];
+            var flag=0;
+            var screen_div;
+            var conversation=[];
+            var context;
+            var accessToken = "5ea19c56a7d64f6ebdd441c4ccb9c550";
+            var baseUrl = "https://api.api.ai/v1/";
+
+            $(document).ready(function() {
+
+
+                        $("#input").keypress(function(event) {
+                            if (event.which == 13) {
+                                event.preventDefault();
+
+                                send($("#input").val());
+                                document.getElementById('input').value='';
+                                $('#screen-div').scrollTop($('#screen-div').prop("scrollHeight"))
+                            }
+                        });
+                        $("#sendmsg").click(function(event) {
+
+                                send($("#input").val());
+                                document.getElementById('input').value='';
+
+                        });
+                        $("#hide_button").click(function(event) {
+
+
+                        // $("#span_icon").removeClass("glyphicon-chevron-down").removeClass("glyphicon-chevron-up");
+                            $("#span_icon").toggleClass("glyphicon-chevron-down").toggleClass("glyphicon-chevron-up");
+
+                        });
+
+
+                    // setInterval(showConvo,30);	
+
+                    });
+
+
+            function send(text) {
+               //var text = $("#input").val();
+               //  alert(text);
+                conversation.push("User: "+text +" ");
+                showConvo("User : "+text +" ");
+                 responseLoading();
+                setInterval(2000);
+                        $.ajax({
+                            type: "POST",
+                            url: baseUrl + "query?v=20150910",
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            headers: {
+                                "Authorization": "Bearer " + accessToken
+                            },
+                            data: JSON.stringify({ query:text, lang: "en", sessionId: "somerandomthing" }),
+
+                            success: function(data) {
+                                //alert(data.result.fulfillment.speech);
+                                //$("#api_response").append(data.result.fulfillment.speech);
+                                console.log(data.result.fulfillment.data);
+                                //setResponse(data.result.fulfillment.speech);
+                                //document.getElementById('when_div').style.display = 'block';
+                                context=data.result.metadata.intentName;
+                                conversation.push("Response : "+data.result.fulfillment.speech +" ")
+                                showConvo("Response : "+data.result.fulfillment.speech +" ");
+                                if(data.result.fulfillment.data.checkConflict=== "true"){
+                                       responseLoading();
+                                    console.log("date----"+data.result.fulfillment.data.fromDate,data.result.fulfillment.data.toDate)
+                                    checkConflict("abc",data.result.fulfillment.data.fromDate,data.result.fulfillment.data.toDate)
+                                }
+                            },
+
+                            error: function() {
+                                alert("Internal Server Error");
+                            }
+                        });
+                         //showConvo("Checking conflicts");
+                    }
+
+                    function showConvo(val) {
+                            if(val.includes("User :")){
+                                 screen_div=document.getElementById("screen-div");
+                                 var user_msg_div=document.createElement("div");
+                                 //var user_msg_name=document.createTextNode("You")
+                                 var user_msg_content=document.createTextNode(val);
+                                 //user_msg_div.appendChild(user_msg_name);
+                                 user_msg_div.appendChild(user_msg_content);
+                                 user_msg_div.className="user-msg";
+                                 screen_div.appendChild(user_msg_div);
+
+                                /* screen_div=document.getElementById("screen-div");
+                                 var user_msg_main_div=document.createElement("div");
+                                 var user_msg_sub_div=document.createElement("div");
+                                 var user_msg_name=document.createTextNode("You")
+                                 var user_msg_content=document.createTextNode(val);
+                                 user_msg_main_div.appendChild(user_msg_name);
+                                 user_msg_main_div.appendChild(user_msg_sub_div);
+                                 user_msg_sub_div.appendChild(user_msg_content);
+                                 user_msg_main_div.className="user-main-div-css"
+                                 user_msg_sub_div.className="user-msg";
+                                 screen_div.appendChild(user_msg_main_div);*/
+                            }
+                            else if(val.includes("Response :")){
+                                //responseLoading();
+
+                              responseLoading_remove();
+                                 var resp_msg_div=document.createElement('div');
+                              //var resp_msg_name=document.createTextNode("Harb :")
+
+                                var resp_msg_content=document.createTextNode(val);
+                                resp_msg_div.appendChild(resp_msg_content);
+                                resp_msg_div.className="resp-msg";
+                                screen_div.appendChild(resp_msg_div); 
+                            }
+                            else{
+                                var resp_msg_div=document.createElement('div');
+                              //var resp_msg_name=document.createTextNode("Harb :")
+
+                                var resp_msg_content=document.createTextNode(val);
+                                resp_msg_div.appendChild(resp_msg_content);
+                                resp_msg_div.className="resp-msg";
+                                screen_div.appendChild(resp_msg_div); 
+                            }
+                          console.log(conversation);
+                        }
+
+            function responseLoading(){
+                console.log("in adding");
+                screen_div=document.getElementById("screen-div");
+                                var loading_msg_div=document.createElement('div');
+                                //var resp_msg_name=document.createTextNode("Harb :")
+                                //var resp_msg_content=document.createTextNode(val);
+                                var loading_msg_content=document.createTextNode("Typing..");
+                                loading_msg_div.appendChild(loading_msg_content);
+                                loading_msg_div.className="resp-msg";
+                                loading_msg_div.id="loading_msg";
+                                screen_div.appendChild(loading_msg_div); 
+                                setTimeout(2000);
+
+            }
+            function responseLoading_remove(){
+                console.log("in remove");
+                var div = document.getElementById('loading_msg');
+                if (div!==null) {
+                 console.log("in div");
+                 //div.removeChild("hello");
+                 $('#loading_msg').remove();
+            }
+            }
+
+
+                        //document.getElementById("screen-div").innerHTML=conversation.join("");
+
+            function checkConflict(name,fromDate,toDate){
+
+                $.ajax({
+                            type: "GET",
+                            url: "https://wt-335f1aceee3f10eea9d216d4f0e53c6d-0.run.webtask.io/chatbot-main?uname="+"bruce.willis"+"&from="+fromDate+"&to="+toDate,
+                            success: function(data) {
+                                 conversation.push("Response : "+data.message +" ")
+                                 showConvo("Response: "+data.message +" ");
+                                 if(data.conflict==='true'){
+                                    var response_index=Math.floor( (Math.random() * pos_sugesstion_array.length));
+                                    conversation.push("Response : "+pos_sugesstion_array[response_index]+" ")
+                                    responseLoading_remove();
+                                     setTimeout(1000)
+                                    showConvo("Response : " +pos_sugesstion_array[response_index]);
+
+                                }
+                                 console.log(data);    
+                            },
+
+                            error: function() {
+                                alert("Internal Server Error");
+                            }
+                        });
+
+
+
+            }    
+
+</script>    
+    
+ <!--====================HTML=======================-->   
+</head>    
+<body>
+    
+<div id="container" >
+    <div class="chat-screen-header">
+        <h1 class="chat-screen-header-title">Harbinger Bot</h1>
+        <div>
+            <button type="button" class="btn hide_button" id="hide_button">
+                <span id="span_icon" class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
+            </button>
+        </div>
+    </div>   
+    
+    <div id="chat_screen" class="chat-screen">
+    <div id="screen-div" class="screen">
+       
+    
+    </div>
+    <div id="controls" class="controls">
+        <div class="col-xs-9 input-div-margin">
+        <input class="form-control input-text" type="text" id="input" placeholder="Enter message here..">
+        </div> 
+        <div class="col-xs-3 button-div-margin">       
+            <button class="form-control send-button" id="sendmsg">Send</button>
+        </div>
+
+    </div>
+    
+    </div>    
+
+</div>
+    
+    
+</body>
+</html>    
