@@ -132,6 +132,7 @@ border-top-right-radius: 10px;
             var baseUrl = "https://api.api.ai/v1/";
 
             $(document).ready(function() {
+		    	alert($.url().param('name'));
                         $('#chat_screen').css("display", "none");
                         $("#span_icon").removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
 
