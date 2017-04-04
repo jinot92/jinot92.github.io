@@ -178,7 +178,9 @@ background-color: #d5d8dc;
     
     
 <script>
-	
+	var flag = 0;
+	$(document).ready(function() {
+		
 	$('#chat_screen').css("display", "none");
 	$("#span_icon").removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
 
@@ -195,6 +197,7 @@ background-color: #d5d8dc;
 			conversationLength = conversation.length;
 			flag = 0;
 		}
+	});
 	});
 
 </script>    
