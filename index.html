@@ -10,15 +10,32 @@
 
     <!--====================Style===============-->
 <style>
-    #container{
-	    float:right;
+   
+#container{
+        margin-left: 65%;
         width: 400px;
         position:fixed;
         bottom:0px;
-      
-    }    
+}
+
+.bot_logout_button{
+    float:right;
+    background-color:#ff3333;
+    margin-top: -70px;
+    margin-right: -25px;
+    height: 40px;
+    border: none;
+    border-radius: 45px;
+    border: 2px solid white;
+    color: white;
+}
+
+#bot_logout{
+  color: white;
+}
+
 .chat-screen{
-padding: 10px;    
+padding: 10px;
 height: 520px;
 background-color: whitesmoke;
 border-bottom-left-radius: 10px;
@@ -27,8 +44,8 @@ border-bottom-right-radius: 10px;
 
 .chat-screen-header{
 height:60px;
-padding-left: 10px;   
-padding-right: 10px;  
+padding-left: 10px;
+padding-right: 10px;
 background-color: #2e86c1;
 width: 100%;
 margin-top: 20px;
@@ -43,23 +60,30 @@ border-top-right-radius: 10px;
     float: left;
     font-size: 23px;
     font-weight: bold;
-    
+
+}
+.message_num{
+    margin-top: 18px;
+    width: 80px;
+    margin-left: 20px;
+    height: 30px;
+    border: none;
+  /*  border-radius: 40px;*/
+    visibility: hidden;
+
 }
 
 .hide_button{
     float:right;
     background-color:#2e86c1;
-    margin-top: 18px;
+    margin-top: -32px;
     border: none;
     color: white;
 }
 .hide_button:hover{
     color:white;
     }
-.hide_button:active {
-  color: white;
-}	
-    
+
 .screen{
     margin-top: 10px;
     margin-bottom: 15px;
@@ -75,313 +99,646 @@ border-top-right-radius: 10px;
    padding-right: 1px;
 }
 .button-div-margin{
-   float: right; 
+   float: right;
     padding-right: 0px;
     padding-left: 0px;
 
 }
 
 #input{
- height: 45px;    
+ height: 45px;
 
 }
 
 #sendmsg {
- height: 45px; 
-    color: blue;
+ height: 45px;
+    color: white;
+    font-weight: bold;
+    background-color: #2e86c1;
 }
 
 .user-main-div-css{
     text-align: left;
     margin-bottom: 5px;
 }
-.user-msg{
-    margin-left: 15px;
+.user-msg-content{
     margin-top: 10px;
     padding: 10px 20px;
-    float: left;
-    background-color:  #e5e7e9 ;
+    background-color: #e5e7e9 ;
     word-wrap: break-word;
+    border-radius: 10px;
+    display: inline-block;
+}
+.user-msg-div{
     width: 80%;
     height: auto;
-    border-radius: 10px;
+    float: left;
+    padding-left: 15px;
 }
-.resp-msg{
-    margin-right: 15px;
+.resp-msg-content{
+    white-space: pre-wrap;
     margin-top: 10px;
     padding: 10px 20px;
     float: right;
+    height: auto;
     background-color: #85c1e9;
-    word-wrap: normal;
+    word-wrap: break-word;
+    border-radius: 10px;
+    display: inline-block;
+}
+.resp-msg-div{
     width: 80%;
     height: auto;
-    border-radius: 10px;
+    float: right;
+    padding-right: 15px;
 }
+
+.message-options{
+  margin-top: 5px;
+  float: right;
+  border-radius: 10px;
+  border: 1px solid black;
+}
+.option-button{
+  width: 100%;
+  padding: 8px;
+  border-radius: 10px;
+  margin-left: 10px;
+  background: none;
+  border: none;
+  float: right;
+  display: inline-block;
+}
+.option-button:hover{
+background-color: #d5d8dc;
+}
+
     
     </style>
     
     
 <script>
-            var teamId,userId;
-            var pos_sugesstion_array=["Would you like me to check for another date?",
-                                      "Sorry. How about another date?","Would you be interested for a different date?"];
-            var flag=0;
-            var screen_div;
-            var conversation=[];
-            var context;
-            var accessToken = "5ea19c56a7d64f6ebdd441c4ccb9c550";
-            var baseUrl = "https://api.api.ai/v1/";
+var conversationLength;
+var teamid, userid, leaveid, leaveFromDate, leaveToDate;
+var posSugesstionArray = ["Would you like me to check for another date?",
+"Sorry. How about I check for another date?", "Would you be interested for a different date?"
+];
 
-            $(document).ready(function() {
-		    	alert($.url().param('name'));
-                        $('#chat_screen').css("display", "none");
-                        $("#span_icon").removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
+var errorMsgArray = ["Oops.There has been an error.Do retry again in a while.",
+"An error seems to have occurred. Please retry after a couple of minutes."];
 
-                        $("#input").keypress(function(event) {
-                            if (event.which == 13) {
-                                event.preventDefault();
+var introArray=["I am a Leave Assistant. I can help you apply for Leave."]
 
-                                send($("#input").val());
-                                document.getElementById('input').value='';
-                                $('#screen-div').scrollTop($('#screen-div').prop("clientHeight"))
-                            }
-                        });
-                        $("#sendmsg").click(function(event) {
-
-                                send($("#input").val());
-                                document.getElementById('input').value='';
-
-                        });
-                        $("#hide_button").click(function(event) {
-
-                            if(flag==0){
-                                $('#chat_screen').css("display", "block");
-                               // $('#screen-div').html(" ");
-
-                                
-                                 $("#span_icon").removeClass("glyphicon-chevron-up").addClass("glyphicon-chevron-down");
-                                flag=1;
-                            }
-                            else if(flag==1) {
-                                $("#span_icon").removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
-                                
-                                $('#chat_screen').css("display", "none");
-                                flag=0;
-                            }
-                        });
+var flag = 0;
+var screenDiv;
+var conversation = [];
+var context;
+var accessToken = "60040c142a374091a6f8bbeeda5f1beb"; //google heroku test agent
+var baseUrl = "https://api.api.ai/v1/";
+var bufferInput;
+var functionName,errorMsg;
 
 
-                    // setInterval(showConvo,30);	
+$(document).ready(function() {
 
-                    });
+	// Clear context of  user
+	$("#logout_btn").click(function () {
+		console.log("Clicked");
+	})
 
-
-            function send(text) {
-               //var text = $("#input").val();
-               //  alert(text);
-                conversation.push("User: "+text +" ");
-                showConvo("User : "+text +" ");
-                 responseLoading();
-                setInterval(2000);
-                        $.ajax({
-                            type: "POST",
-                            url: baseUrl + "query?v=20150910",
-                            contentType: "application/json; charset=utf-8",
-                            dataType: "json",
-                            headers: {
-                                "Authorization": "Bearer " + accessToken
-                            },
-                            data: JSON.stringify({ query:text, lang: "en", sessionId: "somerandomthing" }),
-
-                            success: function(data) {
-                                //alert(data.result.fulfillment.speech);
-                                //$("#api_response").append(data.result.fulfillment.speech);
-                                console.log(data.result.fulfillment.data);
-                                //setResponse(data.result.fulfillment.speech);
-                                //document.getElementById('when_div').style.display = 'block';
-                                context=data.result.metadata.intentName;
-                                conversation.push("Response : "+data.result.fulfillment.speech +" ")
-                                
-                                if(data.result.fulfillment.speech!=="suggestion_check")
-                                {
-                                    showConvo("Response : "+data.result.fulfillment.speech +" ");
-                                }
-                                if(data.result.fulfillment.speech==="suggestion_check"){
-                                     dateSuggestion(userId,teamId);
-                                }
-                                
-                                if(data.result.fulfillment.data.checkConflict=== "true" && data.result.fulfillment.data.suggestion!== "true" ){
-                                    responseLoading();
-                                    console.log("date----"+data.result.fulfillment.data.fromDate,data.result.fulfillment.data.toDate)
-                                    checkConflict("abc",data.result.fulfillment.data.fromDate,data.result.fulfillment.data.toDate)
-                                }
-                                
-                            },
-
-                            error: function() {
-                                alert("Internal Server Error");
-                            }
-                        });
-                         //showConvo("Checking conflicts");
-                    }
-
-                    function showConvo(val) {
-                            if(val.includes("User :")){
-                                 screen_div=document.getElementById("screen-div");
-                                 var user_msg_div=document.createElement("div");
-                                 //var user_msg_name=document.createTextNode("You")
-                                 var user_msg_content=document.createTextNode(val);
-                                 //user_msg_div.appendChild(user_msg_name);
-                                 user_msg_div.appendChild(user_msg_content);
-                                 user_msg_div.className="user-msg";
-                                user_msg_div.id="user_msg";
-                                 screen_div.appendChild(user_msg_div);
-
-                            }
-                            else if(val.includes("Response : ")){
-                                //responseLoading();
-
-                              responseLoading_remove();
-                                 var resp_msg_div=document.createElement('div');
-                              //var resp_msg_name=document.createTextNode("Harb :")
-                                var resp_msg_content=document.createTextNode(val);
-                                resp_msg_div.appendChild(resp_msg_content);
-                                resp_msg_div.className="resp-msg";
-                                resp_msg_div.id="resp_msg";
-                                screen_div.appendChild(resp_msg_div); 
-                            }
-                            else{
-                                var resp_msg_div=document.createElement('div');
-                              //var resp_msg_name=document.createTextNode("Harb :")
-
-                                var resp_msg_content=document.createTextNode(val);
-                                resp_msg_div.appendChild(resp_msg_content);
-                                resp_msg_div.className="resp-msg";
-                                screen_div.appendChild(resp_msg_div); 
-                            }
-                          console.log(conversation);
-                        }
-
-            function responseLoading(){
-                console.log("in adding");
-                screen_div=document.getElementById("screen-div");
-                                var loading_msg_div=document.createElement('div');
-                                //var resp_msg_name=document.createTextNode("Harb :")
-                                //var resp_msg_content=document.createTextNode(val);
-                                var loading_msg_content=document.createTextNode("Typing..");
-                                loading_msg_div.appendChild(loading_msg_content);
-                                loading_msg_div.className="resp-msg";
-                                loading_msg_div.id="loading_msg";
-                                screen_div.appendChild(loading_msg_div); 
-                                setTimeout(2000);
-
-            }
-            function responseLoading_remove(){
-                console.log("in remove");
-                var div = document.getElementById('loading_msg');
-                if (div!==null) {
-                 console.log("in div");
-                 //div.removeChild("hello");
-                 $('#loading_msg').remove();
-            }
-            }
+	$('#chat_screen').css("display", "none");
+	$("#span_icon").removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
 
 
-                        //document.getElementById("screen-div").innerHTML=conversation.join("");
+	// Check input textbox value and give error
+	$("#input").keyup(function() {
+		if ($("#input").val() === "") {
+			$("#input-div").addClass("has-error");
+		} else {
+			$("#input-div").removeClass("has-error");
+		}
+	})
 
-            function checkConflict(name,fromDate,toDate){
+	/*WHEN USER HITS ENTER AFTER TYPING INPUT*/
+	$("#input").keypress(function(event) {
+		if (event.which == 13) {
+			event.preventDefault();
+			if ($("#input").val() !== "") {
+				document.getElementById('input').placeholder = "Enter message here..";
+				errorFlag=0;
+				bufferInput=$("#input").val();
+				sendMessage($("#input").val());
+				document.getElementById('input').value = '';
+			} else {
+				document.getElementById('input').placeholder = "Please enter an input";
+			}
+		}
+	});
+	/*WHEN USER USES SEND BUTTON*/
+	$("#sendmsg").click(function(event) {
+		if ($("#input").val() !== "") {
+			// $("#input-div").removeClass("has-error");
+			document.getElementById('input').placeholder = "Enter message here..";
+			errorFlag=0;
+			bufferInput=$("#input").val();
+			sendMessage($("#input").val());
+			document.getElementById('input').value = '';
+		} else {
+			// $("#input-div").addClass("has-error");
+			document.getElementById('input').placeholder = "Please enter an input";
+		}
 
-                $.ajax({
-                            type: "GET",
-                            url: "https://wt-335f1aceee3f10eea9d216d4f0e53c6d-0.run.webtask.io/chatbot-main?uname="+"bruce.willis"+"&from="+fromDate+"&to="+toDate,
-                            success: function(data) {
-                                 conversation.push("Response : "+data.message +" ")
-                                 showConvo("Response: "+data.message +" ");
-                                
-                                 teamId=data.date_suggestion.teamid;
-                                 userId=data.date_suggestion.userid;
-                                
-                                 console.log(data.date_suggestion.teamid + "=========="+ data.date_suggestion.userid);
-                                
-                                if(data.conflict==='true'){
-                                     var response_index=Math.floor( (Math.random() * pos_sugesstion_array.length));
-                                     conversation.push("Response : "+pos_sugesstion_array[response_index]+" ")
-                                     responseLoading_remove();
-                                     
-                                     showConvo("Response : " +pos_sugesstion_array[response_index]);
-                                    
-                                }
-                                 console.log(data);    
-                            },
+	});
+	/*HIDE CHAT SCREEN*/
+	$("#hide_button").click(function(event) {
 
-                            error: function() {
-                                alert("Internal Server Error");
-                            }
-                        });
-
-
-
-            }    
-    
-    
-    function dateSuggestion(userId,teamId){
-
-                $.ajax({
-                            type: "GET",
-                            url: "https://wt-335f1aceee3f10eea9d216d4f0e53c6d-0.run.webtask.io/date-suggestion?uid="+userId+"&tid="+teamId,
-                            success: function(data) {
-                                 conversation.push("Response : "+data+" ")
-                                  responseLoading_remove();
-                                
-                                 showConvo("Response: "+data+" ");
-                                
-                                 console.log(data);    
-                            },
-
-                            error: function() {
-                                alert("Internal Server Error");
-                            }
-                        });
+		if (flag == 0) {
+			$('#chat_screen').css("display", "block");
+			$("#span_icon").removeClass("glyphicon-chevron-up").addClass("glyphicon-chevron-down");
+			flag = 1;
+		} else if (flag == 1) {
+			$("#span_icon").removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
+			$('#chat_screen').css("display", "none");
+			conversationLength = conversation.length;
+			flag = 0;
+		}
+	});
 
 
+});
 
-            }    
+// Capitalise first character of username
+function capitalizeFirstLetter(string) {
+	return string.charAt(0).toUpperCase() + string.slice(1);
+}
 
+
+// Scrolls teh scrollbar at bottom of the  page
+function scrollChatBox() {
+	console.log("SCROLL");
+	var objDiv = document.getElementById("screen-div");
+	objDiv.scrollTop = objDiv.scrollHeight;
+}
+
+
+var userObject = {
+	"user_name":'jino.thomas'
+}
+
+
+function sendMessage(text) {
+	var userName = $("#userName").val();
+
+	conversation.push("{{user.name}}" + " : " + text + " ");
+	showConvo("{{user.name}}" + " : " + text + " ");
+	var shouldProceedFurthur = true;
+	console.log("SESSION","{{session}}");
+	responseLoading();
+	setInterval(2000);
+	$.ajax({
+		type: "POST",
+		url: baseUrl + "query?v=20150910",
+		contentType: "application/json; charset=utf-8",
+		dataType: "json",
+		headers: {
+			"Authorization": "Bearer " + accessToken
+		},
+		data: JSON.stringify({
+			query: text,
+			lang: "en",
+			sessionId: "{{session}}",
+		}),
+
+		success: function(data) {
+			console.log(data.result.metadata.intentName);
+			console.log(data);
+			if(data.status.code === 200)
+			{
+				response = data.result.fulfillment.speech;
+				response_data= data.result.fulfillment.data;
+				conversation.push("Bot : " + data.result.fulfillment.speech + " ");
+
+				if(response_data !== undefined ){
+
+					response_intent=data.result.fulfillment.data.intent;
+
+					if(data.result.fulfillment.data.ifOptions === "true"){
+						console.log("before options");
+						showMsgWithOptions(data);
+					}
+					else
+					{
+
+					if (data.result.fulfillment.data.checkConflict === "true")
+					{
+
+						shouldProceedFurthur = checkLeaveConflict("abc", data.result.fulfillment.data.fromDate,
+						data.result.fulfillment.data.toDate,data.result.fulfillment.data.reason);
+
+						if(!shouldProceedFurthur){
+							return;
+						}
+					}
+
+				 else if (response_intent === "Greeting") {
+						// IF THE RESPONSE INTENT IS "GREETING" i.e when user greets. Concat name with response
+						showConvo("Bot : " + data.result.fulfillment.speech + ' ' + capitalizeFirstLetter(userName));
+						var response_index = Math.floor((Math.random() * introArray.length));
+						conversation.push("Bot : " + introArray[response_index] + " ");
+						showConvo("Bot : " + introArray[response_index] + " ");
+					}
+
+
+					else{
+
+						if(data.result.fulfillment.speech !=="")
+						{
+							showConvo("Bot : " + data.result.fulfillment.speech + " ");
+						}
+						else{
+							showConvo("Bot : Could you say that again ");
+						}
+				}
+			}
+			}
+			else{
+				if(data.result.fulfillment.speech !=="")
+				{
+					showConvo("Bot : " + data.result.fulfillment.speech + " ");
+				}
+				else{
+					showConvo("Bot : Could you say that again ");
+				}
+			}
+
+		} //ERROR CODE 200 CHECKING IF
+
+		else if(data.status.code === 206){
+			if(data.result.action.includes("smalltalk")){
+				if(data.result.fulfillment.speech !=="")
+				{
+					conversation.push("Bot : " + data.result.fulfillment.speech + " ");
+					showConvo("Bot : " + data.result.fulfillment.speech + " ");
+				}
+				else{
+					showConvo("Bot : I didnt get that ");
+				}
+			}
+			if(data.status.errorType==="partial_content"){
+				if(data.result.fulfillment.speech !=="")
+				{
+					conversation.push("Bot : Could you say that again ");
+					showConvo("Bot : Could you say that again ");
+				}
+			}
+		}//ERROR CODE 206 CHECKING
+
+		else{
+			showConvo("Bot : Could you type that again ");
+		}
+	},
+
+	error: function(errorData) {
+		logError("sendMessage",errorData);
+	}
+
+});
+
+}
+
+
+/*SHOW MESSAGE ON CHAT SCREEN:Check string for "<username> :" or "Bot :"*/
+function showConvo(val) {
+	if (val.includes("{{user.name}} : ")) {
+		screenDiv = document.getElementById("screen-div");
+		var userMsgDiv = document.createElement("div");
+		var userMsgContent= document.createElement("div");
+		//var formatInput=capitalizeFirstLetter(val.split(":")[0])+" : "+val.split(":")[1];
+		var formatInput=val.replace("{{user.name}} : ","");
+		var user_msg_content = document.createTextNode(formatInput);
+		userMsgContent.appendChild(user_msg_content);
+		userMsgContent.className = "user-msg-content";
+		userMsgContent.id = "user_msg";
+		userMsgDiv.appendChild(userMsgContent);
+		userMsgDiv.className = "user-msg-div";
+		screenDiv.appendChild(userMsgDiv);
+	}
+	else if (val.includes("Bot : ")) {
+		responseLoadingRemove();
+		var respMsgDiv = document.createElement('div');
+		var respMsgContent = document.createElement('div');
+		var formatInput=val.replace("Bot : ","");
+		console.log("HERE ====" + formatInput);
+		var resp_msg_content = document.createTextNode(formatInput);
+		respMsgContent.appendChild(resp_msg_content);
+		respMsgContent.className = "resp-msg-content";
+		respMsgContent.id = "resp_msg";
+		respMsgDiv.appendChild(respMsgContent);
+		respMsgDiv.className = "resp-msg-div";
+		screenDiv.appendChild(respMsgDiv);
+	}
+	console.log(conversation);
+	scrollChatBox();
+}
+
+//FUNCTION TO SHOW MESSAGES WITH OPTIONS
+function showMsgWithOptions(msgWithOptions){
+ console.log("in options");
+ responseLoadingRemove();
+ console.log(msgWithOptions );
+ var optionMsgDiv = document.createElement('div'); // main div
+ var optionMsgContent = document.createElement('div'); // div in main div
+ optionMsgContent.id = "resp_msg";
+ var main_msg_content = document.createTextNode(msgWithOptions.result.fulfillment.speech);// create text with msg in spee
+ optionMsgContent.appendChild(main_msg_content);
+ optionMsgContent.className = "resp-msg-content";
+ optionMsgDiv.appendChild(optionMsgContent);
+
+ var optionsMsgOption = document.createElement('div'); //div in optionMsgContent
+ var getOptions=msgWithOptions.result.fulfillment.data.options;
+ console.log(getOptions);
+ 	for(var i = 0; i < getOptions.length; i++) {
+ 		var obj = getOptions[i];
+ 		console.log(obj["option"]);
+ 			 var optionButton = document.createElement("button");
+ 			 optionButton.id="optionButton_"+obj["option"];
+ 			 optionButton.innerHTML = obj["option"];
+ 			 optionButton.onclick = function() {
+ 				//$("#input").val(document.getElementById(this.id).innerHTML);
+				sendMessage(document.getElementById(this.id).innerHTML);
+ 			 };
+ 			 optionButton.className = "option-button";
+ 			 optionsMsgOption.appendChild(optionButton);
+ 	}
+ optionsMsgOption.className="message-options"
+ optionMsgDiv.appendChild(optionsMsgOption);
+ optionMsgDiv.className = "resp-msg-div";
+ screenDiv.appendChild(optionMsgDiv);
+scrollChatBox();
+}
+
+
+/*TYPING MESSAGE LOADING */
+function responseLoading() {
+	screenDiv = document.getElementById("screen-div");
+	var loadingMsgDiv = document.createElement('div');
+	var loadingMsgContent = document.createElement('div');
+	var loading_msg_content = document.createTextNode("Typing..");
+	loadingMsgContent.appendChild(loading_msg_content);
+	loadingMsgDiv.appendChild(loadingMsgContent);
+	loadingMsgContent.className="resp-msg-content";
+	loadingMsgDiv.className = "resp-msg-div";
+	loadingMsgDiv.id = "loading_msg";
+	screenDiv.appendChild(loadingMsgDiv);
+	setTimeout(2000);
+}
+
+/*TYPING MESSAGE  REMOVING*/
+function responseLoadingRemove() {
+	var div = document.getElementById('loading_msg');
+	if (div !== null) {
+		$('#loading_msg').remove();
+	}
+}
+
+
+// THIS FUNCTIONS IS CALLED AFTER THE DETAILS HAVE BEEN CILLECTED FROM THE USER.
+// THIS FUNCTION WOULD CHECK FOR LEAVE CONFLICT
+
+function checkLeaveConflict(name, fromDate, toDate,reason) {
+	console.log(reason);
+	var returnedScored=sentimentAnalysis(reason);
+		if(returnedScored === undefined){
+			return false;
+		}
+	console.log(" after sentiment call");
+	console.log(reason + " " + returnedScored);
+	$.ajax({
+		type: "GET",
+			// new chat bot
+			url: "http://localhost:3000/checkConflict?uname=" + "{{user.username}}" + "&from=" + fromDate + "&to=" + toDate+ "&score=" + returnedScored+ "&reason=" + reason+"&sessionId="+"{{session}}",
+		success: function(data) {
+
+			console.log(data);
+			if(data.error==="false"){
+				conversation.push("Bot : " + data.message + " ")
+				if(data.message !==""){
+					showConvo("Bot : " + data.message + " ");
+				}
+			}
+			else{
+				conversation.push("Bot : " + data.message + " ")
+				showConvo("Bot : " + data.message + " ");
+			}
+
+			leaveid = data.leaveid;
+			userid = data.userid;
+			teamid = data.teamid;
+			leaveFromDate = data.fromdate;
+			leaveToDate = data.todate;
+
+			console.log(data.leaveid + "===========" + data.userid );
+
+			if (data.conflict === 'true') {
+				var response_index = Math.floor((Math.random() * posSugesstionArray.length));
+				conversation.push("Bot : " + posSugesstionArray[response_index] + " ")
+				responseLoadingRemove();
+				setTimeout(1000)
+				showConvo("Bot : " + posSugesstionArray[response_index]);
+			}
+		},
+
+		error: function(errorData) {
+			$("#loading_msg").remove();
+			logError("checkLeaveConflict",errorData)
+		}
+	});
+
+	return true;
+
+} // end block checkLeaveConflict
+
+
+function leaveStatusCheck(userName) {
+	console.log("In leave status :" + userName);
+	$.ajax({
+		type: "GET",
+		url: "" + userName ,
+		success: function(data) {
+			conversation.push("Bot : " + data + " ")
+			responseLoadingRemove();
+			showConvo("Bot : " + data + " ");
+			console.log(data);
+		},
+
+		error: function(errorData) {
+			$("#loading_msg").remove();
+			//alert("Internal Server Error");
+			logError("leaveStatusCheck",errorData)
+		}
+	});
+}
+
+
+
+// function getAllEmps() {
+// 	$.ajax({
+// 		type: "GET",
+// 		url: "http://localhost:3000/getAllEmployees",
+// 		success: function(data) {
+// 			conversation.push("Bot : " + data + " ")
+// 			responseLoadingRemove();
+// 			console.log(data);
+// 		},
+//
+// 		error: function(errorData) {
+// 			$("#loading_msg").remove();
+// 			//alert("Internal Server Error");
+// 			logError("getAllEmp",errorData)
+// 		}
+// 	});
+// }
+
+// FUNCTION CALLED WHEN USER TYPES "YES" FOR DATE SUGGESTION
+function dateSuggestion(uid, tid, from, to) {
+	console.log(from +" "+ to);
+	$.ajax({
+		type: "GET",
+		url: "" + uid + "&tid=" + tid + "&from=" + from + "&to=" + to,
+		success: function(data) {
+			conversation.push("Bot : " + data + " ")
+			responseLoadingRemove();
+
+			showConvo("Bot : " + data + " ");
+			//alert("after suggestion");
+			console.log(data);
+		},
+
+		error: function(errorData) {
+			$("#loading_msg").remove();
+			//alert("Internal Server Error");
+			logError("dateSuggestion",errorData)
+		}
+	});
+
+}//DATE SUGGESTION FUNCTION ENDS HERE
+
+
+
+// FUNCTION CALLED IN "checkLeaveConflict" TO CHECK THE SENCTIMENT SCORE OF THE REASON
+function sentimentAnalysis(reason) {
+	console.log(" in sentiment function");
+	console.log("Reason ==="+ reason);
+	if(reason === undefined){
+		showConvo("Bot : The reason could not be identified");
+	}
+	else{
+		var score;
+		$.ajax({
+			type: "GET",
+			async: false,
+			url:"https://wt-335f1aceee3f10eea9d216d4f0e53c6d-0.run.webtask.io/MICROSOFT-SENTIMENT?reason="+reason,
+			//https://wt-335f1aceee3f10eea9d216d4f0e53c6d-0.run.webtask.io/MICROSOFT-SENTIMENT?reason=
+			success: function(data) {
+
+				console.log(data)
+				if(data.error ==="false")
+				score=data.message;
+				console.log(data);
+			},
+
+			error: function(errorData) {
+				$("#loading_msg").remove();
+				//alert("Internal Server Error");
+				logError("sentimentAnalysis",errorData)
+			}
+		});
+		console.log(" after sentiment function");
+		return score;
+	}
+
+}//SENTIMENT FUNCTION ENDS HERE
+
+
+
+//TO BE IMPLEMENTED
+function checkIncomingMessages() {
+	if (conversation.length > conversationLength) {
+		("you have " + conversation.length - conversationLength + " unread messages")
+	}
+}
+
+//SHOWS ERROR ON CONSOLE. IS CALLED FROM ERROR OF EVERY AJAX FUNCTION
+function logError(functionName,errorMsg){
+	var responseIndex=Math.floor((Math.random() * errorMsgArray.length ));
+	showConvo("Bot : "+ errorMsgArray[responseIndex]);
+	console.log("Error : In function : "+functionName+" of type "+errorMsg.status+" "+errorMsg.statusText+" "+errorMsg.responseText);
+
+	var errorMessage ="Error : In function : "+functionName+" of type "+errorMsg.status+" "+errorMsg.statusText+" "+errorMsg.responseText;
+
+	$.ajax({
+		type: "GET",
+		async: false,
+		url:""+errorMessage,
+		// https://wt-335f1aceee3f10eea9d216d4f0e53c6d-0.run.webtask.io/error-mail?msg=
+		success: function(data) {
+			console.log(" Error mail sent");
+		},
+		error: function() {
+		}
+	});
+
+}
+   
 </script>    
     
  <!--====================HTML=======================-->   
 </head>    
 <body>
     
-<div id="container"  >
-    <div class="chat-screen-header">
-        <h1 class="chat-screen-header-title">Harbinger Bot</h1>
-        <div>
-            <button type="button" class="btn hide_button" id="hide_button">
-                <span id="span_icon" class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
-            </button>
-        </div>
-    </div>   
-    
-    <div id="chat_screen" class="chat-screen">
-    <div id="screen-div" class="screen">
-       
-    
-    </div>
-    <div id="controls" class="controls">
-        <div class="col-xs-9 input-div-margin">
-        <input class="form-control input-text" type="text" id="input" placeholder="Enter message here..">
-        </div> 
-        <div class="col-xs-3 button-div-margin">       
-            <button class="form-control send-button" id="sendmsg">Send</button>
-        </div>
+	
+<div id="container">
+	<div class="chat-screen-header">
+		<div>
+			<h1 class="chat-screen-header-title">Leave Assistant</h1>
+			<div>
+				<button type="button" class="btn message_num disabled" id="message_num_btn">
 
-    </div>
-    
-    </div>    
+				</button>
+			</div>
+		</div>
+		<div>
+			<button type="button" class="btn hide_button" id="hide_button">
+				<span id="span_icon" class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
+			</button>
 
+			<!-- <a href="/users/logout" id="logout_btn">
+				<button type="button" class="btn bot_logout_button" id="bot_logout_button">
+					<span id="span_icon" class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+				</button>
+			</a> -->
+		</div>
+	</div>
+
+	<div id="chat_screen" class="chat-screen">
+		<div id="screen-div" class="screen">
+
+
+		</div>
+		<div id="controls" class="controls">
+			<div id="input-div" class="col-xs-9 input-div-margin">
+				<input class="form-control input-text" type="text" id="input" placeholder="Enter message here.." autocomplete="on">
+			</div>
+			<div id="button-div" class="col-xs-3 button-div-margin">
+				<button class="form-control send-button" id="sendmsg">Send</button>
+			</div>
+
+		</div>
+
+	</div>
+	<input type="hidden" value="{{user.name}}" id="userName">
 </div>
-    
+
     
 </body>
 </html>    
